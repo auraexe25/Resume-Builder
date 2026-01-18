@@ -1,16 +1,24 @@
-# React + Vite
+# AI Resume Builder
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A web application that uses AI to help users generate and optimize professional resumes. This tool analyzes user input to suggest improvements, format content, and ensure better compatibility with Applicant Tracking Systems (ATS).
 
-Currently, two official plugins are available:
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Key Features
+* **AI-Powered Suggestions:** Automatically improves phrasing and grammar for bullet points.
+* **ATS Optimization:** structured formats designed to pass automated screenings.
+* **Real-time Preview:** See changes instantly as you edit your details.
+* **PDF Export:** Download the final resume in a clean, standard format.
 
-## React Compiler
+## Tech Stack
+* **Frontend:**  React.js, Tailwind CSS
+* **Backend:**  Node.js, Python
+* **AI Model:**  Gemini API
+* **Database:** MongoDB
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-## Expanding the ESLint configuration
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+
+## License & Contact
+© 2026 Veena Sahu. All Rights Reserved.
+
+This code is proprietary and not open source. It is intended for educational and portfolio purposes only. For inquiries or access, please contact me at @veenasahu195@gmail.com. 
