@@ -20,11 +20,12 @@ const Dashboard = () => {
   const [showUploadResume, setShowUploadResume] = useState(false);
   const [title, setTitle] = useState('');
   const [resume, setResume] = useState(null);
+  const [editResumeId, setEditResumeId] = useState('');
 
 
-const loadAllResumes = () => {
-  setAllResumes(dummyResumeData);
-}
+// const loadAllResumes = () => {
+//   setAllResumes(dummyResumeData);
+// }
 
 const navigate= useNavigate()
 
@@ -38,6 +39,19 @@ const uploadResume = async (event)=>{
   event.preventDefault();
   setShowUploadResume(false);
   navigate(`/app/builder/res123`)
+}
+
+
+const editTitle = async (event)=>{
+  event.preventDefault();
+}
+
+
+const deleteResume = async (resumeId)=>{
+  const confirm= window.confirm("Are you sure you want to delete this resume?");
+  if(confirm){
+    setAllResumes(prev=> prev.filter(resume=> resume._id !== resumeId))
+  }
 }
 
 
@@ -70,9 +84,9 @@ const uploadResume = async (event)=>{
                 <p className='absolute bottom-1 text-[11px] text-slate-400 group-hover:text-slate-500 transition-all duration-300 px-2 text-center' style={{ color: baseColor + '90' }}>
                   Updated on {new Date(resume.updatedAt).toLocaleDateString()}
                 </p>
-                <div className='absolute top-1 right-1 group-hover:flex items-center hidden'>
-                  <TrashIcon className="size-7 p-1.5 hover:bg-white/50 rounded text-slate-700 transition-colors" />
-                  <PencilIcon className="size-7 p-1.5 hover:bg-white/50 rounded text-slate-700 transition-colors" />
+                <div onClick={e=> e.stopPropagation()} className='absolute top-1 right-1 group-hover:flex items-center hidden'>
+                  <TrashIcon onClick={()=> deleteResume(resume._id)} className="size-7 p-1.5 hover:bg-white/50 rounded text-slate-700 transition-colors" />
+                  <PencilIcon onClick={()=> {setEditResumeId(resume._id);  setTitle(resume.title)}} className="size-7 p-1.5 hover:bg-white/50 rounded text-slate-700 transition-colors" />
                 </div>
               </button>
             )
@@ -119,6 +133,21 @@ const uploadResume = async (event)=>{
             </div>
           </form>
       )
+      }
+
+
+      {
+        editResumeId && (
+          <form onSubmit={editTitle} onClick={()=>setEditResumeId('')} className='fixed inset-0 bg-black/70 backdrop-blur bg-opacity-50 z-10 flex items-center justify-center'>
+            <div onClick={e=> e.stopPropagation()} className='realtive bg-slate-50 border shadow-md rounded-lg w-full max-w-sm p-6'>
+              <h2 className='text-xl font-bold mb-4'> Edit Resume Title</h2>
+              <input onChange={(e)=>setTitle(e.target.value)} type="text" placeholder="Enter Resume Title" className='w-full px-4 py-2 mb-4 focus:border-indigo-600 ring-indigo-600' required />
+              <button className='w-full py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors'>Update</button>
+              <XIcon className='absolute top-4 right-4 text-slate-400 hover:text-slate-600 cursor-pointer transition-colors' onClick={()=>{
+                setEditResumeId('');  setTitle('')}}/>
+            </div>
+          </form>
+        )
       }
       </div>
     </div>
