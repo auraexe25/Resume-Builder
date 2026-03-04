@@ -24,7 +24,7 @@
 ```plaintext
 Resume-Builder/
 ├── Client/       # React + Vite frontend application
-└── Server/       # Node.js + Express backend API
+└── Server/       # Node.js + Express backend
 ```
 
 ---
