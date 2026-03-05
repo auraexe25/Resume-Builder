@@ -1,10 +1,23 @@
 //controller for enhancing resume's professional summary using AI
 //POST: /api/ai/enhance-pro-sum
-import ai from "../configs/ai.js";
+import ai, { getAIConfigError } from "../configs/ai.js";
 import Resume from "../models/Resume.js";
+
+const ensureAIConfigured = (res) => {
+    const configError = getAIConfigError();
+
+    if (configError) {
+        res.status(503).json({ message: configError });
+        return false;
+    }
+
+    return true;
+};
 
 export const enhanceProfessionalSummary= async (req, res) => {
     try{
+        if (!ensureAIConfigured(res)) return;
+
         const {userContent} = req.body;
 
         if(!userContent){
@@ -35,6 +48,8 @@ export const enhanceProfessionalSummary= async (req, res) => {
 //POST: /api/ai/enhance-job-desc
 export const enhanceJobDescription = async (req, res) => {
     try {
+        if (!ensureAIConfigured(res)) return;
+
         const { userContent } = req.body;
 
         if (!userContent) {
@@ -67,6 +82,7 @@ export const enhanceJobDescription = async (req, res) => {
 //POST:/api/ai/upload-resume
 export const uploadResume = async (req, res) => {
     try {
+        if (!ensureAIConfigured(res)) return;
 
         const {resumeText, title} = req.body;
         const userId= req.userId;

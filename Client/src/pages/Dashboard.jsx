@@ -7,11 +7,17 @@ import {
   XIcon,
   UploadCloud,
 } from 'lucide-react'
-import React, { useState } from 'react' 
+import React, {useState } from 'react' 
 import { dummyResumeData } from '../assets/assets'
 import { useNavigate } from 'react-router-dom'
+import { useSelector } from 'react-redux'
+import toast from 'react-hot-toast'
+import api from '../configs/api'
+import pdftoText from 'react-pdftotext'
 
 const Dashboard = () => {
+
+  const { token }= useSelector(state=> state.auth)
   const colors = ["#9333ea", "#d97706", "#dc2626", "#0284c7", "#16a34a"]
  
   const [allResumes, setAllResumes] = useState(dummyResumeData);
@@ -23,22 +29,44 @@ const Dashboard = () => {
   const [editResumeId, setEditResumeId] = useState('');
 
 
-// const loadAllResumes = () => {
-//   setAllResumes(dummyResumeData);
-// }
+const [isLoading, setIsLoading]= useState(false)
 
 const navigate= useNavigate()
 
 const createResume = async (event)=>{
   event.preventDefault();
-  setShowCreateResume(false);
-  navigate(`/app/builder/res123`)
+  try{
+    const {data} = await api.post('/api/resumes/create', {title}, {headers: {Authorization: token}})
+    setAllResumes([...allResumes, data.resume])
+    setTitle('');
+    setShowCreateResume(false);
+    navigate(`/app/builder/${data.resume._id}`)
+  }catch(error){
+    toast.error(error?.response?.data?.message || error.message)
+
+  }
 }
 
 const uploadResume = async (event)=>{
   event.preventDefault();
-  setShowUploadResume(false);
-  navigate(`/app/builder/res123`)
+  setIsLoading(true)
+  try{
+    const resumeText= await pdftoText(resume)
+    const {data} = await api.post('/api/ai/upload-resume', {title, resumeText}, {headers: {Authorization: token}})
+    const newResumeId = data?.resumeId || data?.resume?._id
+
+    if (!newResumeId) {
+      throw new Error('Resume uploaded but no resume id was returned')
+    }
+
+    setTitle('')
+    setResume(null)
+    setShowUploadResume(false)
+    navigate(`/app/builder/${newResumeId}`)
+  } catch(error){
+    toast.error(error?.response?.data?.message || error.message)
+  }
+  setIsLoading(false)
 }
 
 
@@ -127,7 +155,9 @@ const deleteResume = async (resumeId)=>{
                 </label>
                 <input type="file" id="resume-input"  accept='.pdf' className="hidden" onChange={(e)=>setResume(e.target.files?.[0] || null)}/>
               </div>
-              <button className='w-full py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors'>Upload Resume</button>
+              <button disabled={isLoading} className='w-full py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed'>
+                {isLoading ? 'Uploading...' : 'Upload Resume'}
+              </button>
               <XIcon className='absolute top-4 right-4 text-slate-400 hover:text-slate-600 cursor-pointer transition-colors' onClick={()=>{
                 setShowUploadResume(false);  setTitle('')}}/>
             </div>
