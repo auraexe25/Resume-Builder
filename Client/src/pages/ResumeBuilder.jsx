@@ -11,10 +11,15 @@ import ExperienceForm from '../components/ExperienceForm'
 import EducationForm from '../components/EducationForm'
 import ProjectForm from '../components/ProjectForm'
 import SkillsForm from '../components/SkillsForm'
+import { useSelector } from 'react-redux'
+import api from '../configs/api'
+import toast from 'react-hot-toast'
 
 const ResumeBuilder = () => {
 
   const { resumeId } = useParams()
+  const {token} = useSelector(state=> state.auth)
+
 
   const [resumeData, setResumeData] = useState(() => {
     const existingResume = dummyResumeData.find((resume) => resume._id === resumeId)
@@ -33,6 +38,41 @@ const ResumeBuilder = () => {
       public: false,
     }
   })
+const saveResume = async () => {
+  try {
+    const formData = new FormData()
+    formData.append('resumeId', resumeId)
+    formData.append('removeBackground', String(removeBackground))
+
+    const resumeDataToSave = JSON.parse(JSON.stringify(resumeData))
+    const selectedImage = resumeData?.personal_info?.image
+
+    if (selectedImage instanceof File) {
+      formData.append('image', selectedImage)
+      if (!resumeDataToSave.personal_info) {
+        resumeDataToSave.personal_info = {}
+      }
+      delete resumeDataToSave.personal_info.image
+    }
+
+    formData.append('resumeData', JSON.stringify(resumeDataToSave))
+
+    const { data } = await api.put(
+      '/api/resumes/update',
+      formData,
+      { headers: { Authorization: token } }
+    )
+
+    if (data?.resume) {
+      setResumeData(data.resume)
+    }
+
+    toast.success(data?.message || 'Saved successfully')
+  } catch (error) {
+    toast.error(error?.response?.data?.message || error.message)
+  }
+}
+
 
 
 const [activeSectionIndex, setActiveSectionIndex] = useState(0);
@@ -58,9 +98,46 @@ const activeSection= sections[activeSectionIndex]
     }
   }, [resumeData.title])
 
+  useEffect(() => {
+    if (!resumeId || !token) return
 
-  const changeResumeVislibility= () => {
-    setResumeData(prev => ({...prev, public: !prev.public}))
+    api
+      .get('/api/resumes/get/' + resumeId, { headers: { Authorization: token } })
+      .then(({ data }) => {
+        if (data?.resume) {
+          setResumeData(data.resume)
+          document.title = data.resume.title
+        }
+      })
+      .catch((error) => {
+        toast.error(error?.response?.data?.message || error.message)
+      })
+  }, [resumeId, token])
+
+
+  const changeResumeVislibility= async () => {
+    const nextPublic = !resumeData.public
+
+    try {
+      const { data } = await api.put(
+        '/api/resumes/update',
+        {
+          resumeId,
+          resumeData: { public: nextPublic },
+        },
+        { headers: { Authorization: token } }
+      )
+
+      if (data?.resume) {
+        setResumeData((prev) => ({ ...prev, public: data.resume.public }))
+      } else {
+        setResumeData((prev) => ({ ...prev, public: nextPublic }))
+      }
+
+      toast.success(`Resume is now ${nextPublic ? 'Public' : 'Private'}`)
+    } catch (error) {
+      toast.error(error?.response?.data?.message || error.message)
+    }
   }
 
   const handleShare = () => {
@@ -138,7 +215,7 @@ const activeSection= sections[activeSectionIndex]
                 )}
               </div>
 
-                <button className= 'bg-indigo-800 ring-indigo-600 text-white ring hover:ring-indigo-700 hover:bg-indigo-400 hover:text-white transition-all rounded-md px-6 py-2 mt-6 text-sm '>
+                <button onClick={saveResume} className= 'bg-indigo-800 ring-indigo-600 text-white ring hover:ring-indigo-700 hover:bg-indigo-400 hover:text-white transition-all rounded-md px-6 py-2 mt-6 text-sm '>
                   Save Changes
                 </button>
 

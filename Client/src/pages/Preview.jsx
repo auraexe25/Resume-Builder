@@ -1,13 +1,43 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeftIcon } from 'lucide-react'
-import { dummyResumeData } from '../assets/assets'
 import ResumePreview from '../components/ResumePreview'
+import api from '../configs/api'
 
 const Preview = () => {
 const { resumeId } = useParams()
+const [resumeData, setResumeData] = useState(null)
+const [isLoading, setIsLoading] = useState(true)
+const normalizedResumeId = resumeId?.match(/[a-fA-F0-9]{24}/)?.[0] || null
 
-const [resumeData] = useState(() => dummyResumeData.find((resume) => resume._id === resumeId) || null)
+useEffect(() => {
+  if (!normalizedResumeId) {
+    setIsLoading(false)
+    setResumeData(null)
+    return
+  }
+
+  setIsLoading(true)
+  api
+    .get(`/api/resumes/public/${normalizedResumeId}`)
+    .then(({ data }) => {
+      setResumeData(data?.resume || null)
+    })
+    .catch(() => {
+      setResumeData(null)
+    })
+    .finally(() => {
+      setIsLoading(false)
+    })
+}, [normalizedResumeId])
+
+  if (isLoading) {
+    return (
+      <div className='flex flex-col items-center justify-center h-screen'>
+        <h2 className='text-2xl font-semibold mb-2 text-gray-600'>Loading resume...</h2>
+      </div>
+    )
+  }
 
   return resumeData? (
     <div className='bg-slate-100'>

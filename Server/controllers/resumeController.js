@@ -1,5 +1,6 @@
 import imagekit from "../configs/imageKit.js";
 import Resume from "../models/Resume.js";
+import mongoose from 'mongoose';
 import fs from 'fs';
 
 //controller for creating a new resume
@@ -10,10 +11,9 @@ export const createResume= async (req, res) => {
         const {title} = req.body;
 
         //create new resume
-        const newResume= new Resume({
-            user: userId,
+        const newResume= await Resume.create({
+            userId,
             title,
-            sections: []
         })
 
         //return sucess message
@@ -49,7 +49,7 @@ export const getResumeById= async (req, res) => {
         const userId= req.userId;
         const {resumeId} = req.params;
 
-        const resume= await Resume.findOne({_id: resumeId, user: userId})
+        const resume= await Resume.findOne({_id: resumeId, userId})
        
         if(!resume){
             return res.status(404).json({message: 'Resume not found'})
@@ -69,7 +69,13 @@ export const getResumeById= async (req, res) => {
 export const getPublicResumeById= async (req, res) => {   
     try{
         const {resumeId} = req.params;
-        const resume= await Resume.findOne({_id: resumeId, public: true})
+        const normalizedResumeId = String(resumeId || '').match(/[a-fA-F0-9]{24}/)?.[0];
+
+        if (!normalizedResumeId || !mongoose.Types.ObjectId.isValid(normalizedResumeId)) {
+            return res.status(404).json({message: 'Resume not found'})
+        }
+
+        const resume= await Resume.findOne({_id: normalizedResumeId, public: true})
 
         if(!resume){
             return res.status(404).json({message: 'Resume not found'})
@@ -89,7 +95,15 @@ export const updateResume= async (req, res) => {
         const {resumeId, resumeData, removeBackground} = req.body;
         const image= req.file;
 
-        let resumeDataCopy= JSON.parse(resumeData);
+        let resumeDataCopy = {};
+
+        if (typeof resumeData === 'string') {
+            resumeDataCopy = JSON.parse(resumeData || '{}');
+        } else {
+            resumeDataCopy = JSON.parse(JSON.stringify(resumeData || {}));
+        }
+
+        const shouldRemoveBackground = removeBackground === true || removeBackground === 'true';
 
         if(image){
             const imageBufferData= fs.createReadStream(image.path)
@@ -98,14 +112,25 @@ export const updateResume= async (req, res) => {
                 fileName: 'resume.png',
                 folder:'user-resumes',
                 transformation: {
-                    pre: 'w-300 h-300, fo-face, z-0.75' + (removeBackground ? ', e-bgremove' : '')
+                    pre: 'w-300 h-300, fo-face, z-0.75' + (shouldRemoveBackground ? ', e-bgremove' : '')
                 }
             });
 
+            if (!resumeDataCopy.personal_info) {
+                resumeDataCopy.personal_info = {};
+            }
+
             resumeDataCopy.personal_info.image= response.url;
+
+            fs.unlink(image.path, () => {});
         }
 
-        const resume= await Resume.findOneAndUpdate({_id: resumeId, user: userId}, resumeDataCopy, {new: true})
+        const resume= await Resume.findOneAndUpdate({_id: resumeId, userId}, resumeDataCopy, {returnDocument: 'after'})
+
+        if(!resume){
+            return res.status(404).json({message: 'Resume not found'})
+        }
+
         return res.status(200).json({message: 'Saved successfully', resume})
     }
     catch(error){

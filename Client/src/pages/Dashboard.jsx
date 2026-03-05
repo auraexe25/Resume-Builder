@@ -7,7 +7,7 @@ import {
   XIcon,
   UploadCloud,
 } from 'lucide-react'
-import React, {useState } from 'react' 
+import React, {useCallback, useEffect, useState } from 'react' 
 import { dummyResumeData } from '../assets/assets'
 import { useNavigate } from 'react-router-dom'
 import { useSelector } from 'react-redux'
@@ -32,6 +32,16 @@ const Dashboard = () => {
 const [isLoading, setIsLoading]= useState(false)
 
 const navigate= useNavigate()
+
+const loadAllResumes = useCallback(async () => {
+  try {
+    const {data} = await api.get('/api/users/resumes', {headers: {Authorization: token}})
+    setAllResumes(data.resumes)
+  } catch(error){
+    toast.error(error?.response?.data?.message || error.message)
+  }
+}, [token])
+
 
 const createResume = async (event)=>{
   event.preventDefault();
@@ -62,27 +72,51 @@ const uploadResume = async (event)=>{
     setTitle('')
     setResume(null)
     setShowUploadResume(false)
+    if (data?.message) {
+      toast.success(data.message)
+    }
     navigate(`/app/builder/${newResumeId}`)
   } catch(error){
-    toast.error(error?.response?.data?.message || error.message)
+    const fallbackMessage = error?.response?.status
+      ? `Upload failed (${error.response.status}). AI service unavailable or misconfigured.`
+      : 'Upload failed. Please try again.'
+    toast.error(error?.response?.data?.message || error.message || fallbackMessage)
   }
   setIsLoading(false)
 }
 
 
 const editTitle = async (event)=>{
-  event.preventDefault();
-}
-
-
-const deleteResume = async (resumeId)=>{
-  const confirm= window.confirm("Are you sure you want to delete this resume?");
-  if(confirm){
-    setAllResumes(prev=> prev.filter(resume=> resume._id !== resumeId))
+  try{
+    event.preventDefault();
+    const {data} =await api.put(`/api/resumes/update`,{resumeId: editResumeId, resumeData: {title}}, {headers: {Authorization: token}})
+    setAllResumes(allResumes.map(resume=> resume._id === editResumeId ? {...resume, title}: resume)) 
+    setTitle('')
+    setEditResumeId('')
+    toast.success(data.message)
+  }
+  catch(error){
+ toast.error(error?.response?.data?.message || error.message)
   }
 }
 
 
+const deleteResume = async (resumeId)=>{
+  try{
+    const confirm= window.confirm("Are you sure you want to delete this resume?");
+  if(confirm){
+    const {data} =await api.delete(`/api/resumes/delete/${resumeId}`, {headers: {Authorization: token}})
+    setAllResumes(prev=> prev.filter(resume=> resume._id !== resumeId))
+    toast.success(data.message)
+  }
+  }catch(error){
+    toast.error(error?.response?.data?.message || error.message)
+  }
+}
+
+useEffect(() => {
+  loadAllResumes();
+}, [loadAllResumes])
 
   return (
     <div>

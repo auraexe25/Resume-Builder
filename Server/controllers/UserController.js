@@ -1,6 +1,7 @@
 //controller controls the server functions related to user such as registration, login, fetching user details etc. It interacts with the database through the user model and handles the business logic for user-related operations.
 
 import User from "../models/User.js";
+import Resume from "../models/Resume.js";
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
@@ -101,7 +102,7 @@ export const getUserResumes= async (req, res) => {
         const userId= req.userId;
 
         //return user resumes
-        const resumes = await Resume.find({user: userId})
+        const resumes = await Resume.find({userId})
         return res.status(200).json({resumes})
     }
     catch(error){

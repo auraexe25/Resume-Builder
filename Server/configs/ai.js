@@ -11,6 +11,8 @@ const ai = hasApiKey
   ? new OpenAI({
       apiKey,
       baseURL,
+      timeout: 45000,
+      maxRetries: 1,
     })
   : null;
 

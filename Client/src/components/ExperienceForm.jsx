@@ -1,7 +1,12 @@
 import { Briefcase, Plus, Sparkles, SparklesIcon, Trash, Trash2 } from 'lucide-react'
 import React from 'react'
+import { useSelector } from 'react-redux'
+import api from '../configs/api'
+import toast from 'react-hot-toast'
 
 const ExperienceForm = ({data, onChange}) => {
+    const { token } = useSelector((state) => state.auth)
+    const [enhancingIndex, setEnhancingIndex] = React.useState(null)
 
 
     const addExperience= () => {
@@ -25,6 +30,43 @@ const ExperienceForm = ({data, onChange}) => {
         const updated= [...data];
         updated[index]= {...updated[index], [field]: value};
         onChange(updated)   
+    }
+
+    const enhanceDescription = async (index) => {
+        const description = data[index]?.description || ''
+
+        if (!description.trim()) {
+            toast.error('Please add description text before AI enhancement')
+            return
+        }
+
+        setEnhancingIndex(index)
+
+        try {
+            const { data: responseData } = await api.post(
+                '/api/ai/enhance-job-desc',
+                { userContent: description },
+                { headers: { Authorization: token }, timeout: 45000 }
+            )
+
+            if (responseData?.enhancedContent) {
+                updateExperience(index, 'description', responseData.enhancedContent)
+                toast.success('Job description enhanced')
+            }
+        } catch (error) {
+            const timeoutMessage = error?.code === 'ECONNABORTED'
+                ? 'AI request timed out. Please try again.'
+                : null
+            const rateLimitMessage = error?.response?.status === 429
+                ? 'AI is rate limited right now. Please wait a moment and retry.'
+                : null
+            const networkMessage = !error?.response && error?.message
+                ? 'Server not reachable. Please ensure backend is running and try again.'
+                : null
+            toast.error(rateLimitMessage || timeoutMessage || networkMessage || error?.response?.data?.message || error.message)
+        }
+
+        setEnhancingIndex(null)
     }
 
 
@@ -74,9 +116,9 @@ const ExperienceForm = ({data, onChange}) => {
                     <div className="space-y-2">
                         <div className= "flex items-center justify-between">
                             <label> Job Description</label>
-                            <button className='flex ietms-center gap-1 px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors disabled:opacity-50'>
+                            <button type='button' onClick={() => enhanceDescription(index)} disabled={enhancingIndex === index} className='flex items-center gap-1 px-2 py-1 text-xs bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors disabled:opacity-50'>
                                 <SparklesIcon className="w-3 h-3"/>
-                                Enhance with AI
+                                {enhancingIndex === index ? 'Enhancing...' : 'Enhance with AI'}
                             </button>
                         </div>
                         <textarea value={experience.description || ""} onChange={(e) => updateExperience(index, "description", e.target.value)} rows={4} className="w-full text-sm px-3 py-2 orunded-lg resize-none" placeholder= "Describe your key responsibilities and acheivements"/>

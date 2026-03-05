@@ -1,7 +1,48 @@
 import React from 'react'
 import { Sparkles } from 'lucide-react'
+import { useSelector } from 'react-redux'
+import api from '../configs/api'
+import toast from 'react-hot-toast'
 
 const ProfessionalSummaryForm = ({ data, onChange }) => {
+  const { token } = useSelector((state) => state.auth)
+  const [isEnhancing, setIsEnhancing] = React.useState(false)
+
+  const handleAIEnhance = async () => {
+    if (!data?.trim()) {
+      toast.error('Please add summary text before using AI Enhance')
+      return
+    }
+
+    setIsEnhancing(true)
+
+    try {
+      const { data: responseData } = await api.post(
+        '/api/ai/enhance-pro-sum',
+        { userContent: data },
+        { headers: { Authorization: token }, timeout: 45000 }
+      )
+
+      if (responseData?.enhancedContent) {
+        onChange(responseData.enhancedContent)
+        toast.success('Summary enhanced')
+      }
+    } catch (error) {
+      const timeoutMessage = error?.code === 'ECONNABORTED'
+        ? 'AI request timed out. Please try again.'
+        : null
+      const rateLimitMessage = error?.response?.status === 429
+        ? 'AI is rate limited right now. Please wait a moment and retry.'
+        : null
+      const networkMessage = !error?.response && error?.message
+        ? 'Server not reachable. Please ensure backend is running and try again.'
+        : null
+      toast.error(rateLimitMessage || timeoutMessage || networkMessage || error?.response?.data?.message || error.message)
+    }
+
+    setIsEnhancing(false)
+  }
+
   return (
     <div className='space-y-4'>
       <div className='flex items-center justify-between'>
@@ -9,9 +50,9 @@ const ProfessionalSummaryForm = ({ data, onChange }) => {
             <h3 className='flex items-center gap-2 text-lg font-semibold text-gray-900'>Professional Summary</h3>
             <p className='text-sm text-gray-500'> Add summary for your resume here</p>
         </div>
-        <button className='flex items-center gap-2 px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors disabled:opacity-50'>
+        <button type='button' onClick={handleAIEnhance} disabled={isEnhancing} className='flex items-center gap-2 px-3 py-1 text-sm bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors disabled:opacity-50'>
             <Sparkles className="size-5" />
-            AI Enhance
+            {isEnhancing ? 'Enhancing...' : 'AI Enhance'}
         </button>
       </div>
      
