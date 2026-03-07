@@ -3,7 +3,7 @@ import axios from "axios";
 const baseURL =
     import.meta.env.VITE_API_URL ||
     import.meta.env.VITE_BASE_URL ||
-    "http://localhost:3000";
+    "https://resume-builder-1513.onrender.com";
 
 const api= axios.create({
         baseURL
