@@ -124,5 +124,5 @@ git push origin feature/AmazingFeature
 ---
 
 ## 📄 License
-© 2025 Veena Sahu. All Rights Reserved.
+© 2026 Veena Sahu. All Rights Reserved.
 This project is not open source. No part of this codebase may be copied, modified, distributed, or used without the express written permission of the author.
